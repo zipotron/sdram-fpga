@@ -47,7 +47,7 @@ entity sdram is
     --
     -- This value must be provided, as it is used to calculate the number of
     -- clock cycles required for the other timing values.
-    CLK_FREQ : real := 25.0;
+    clk_freq : natural := 25;
 
     -- 32-bit controller interface
     ADDR_WIDTH : natural := 23;
@@ -65,13 +65,13 @@ entity sdram is
     CAS_LATENCY : natural := 2; -- 2=below 133MHz, 3=above 133MHz
 
     -- The number of 16-bit words to be bursted during a read/write.
-    BURST_LENGTH : natural := 2;
+    BURST_LENGTH : integer := 2;
 
     -- timing values (in nanoseconds)
     --
     -- These values can be adjusted to match the exact timing of your SDRAM
     -- chip (refer to the datasheet).
-    T_DESL : real := 200000.0; -- startup delay
+    T_DESL : real :=  50000.0; -- startup delay
     T_MRD  : real :=     12.0; -- mode register cycle time
     T_RC   : real :=     60.0; -- row cycle time
     T_RCD  : real :=     18.0; -- RAS to CAS delay
@@ -159,7 +159,7 @@ architecture arch of sdram is
   );
 
   -- calculate the clock period (in nanoseconds)
-  constant CLK_PERIOD : real := 1.0/CLK_FREQ*1000.0;
+  constant CLK_PERIOD : real := (1.0/Real(clk_freq))*1000.0;
 
   -- the number of clock cycles to wait before initialising the device
   constant INIT_WAIT : natural := natural(ceil(T_DESL/CLK_PERIOD));
@@ -438,8 +438,12 @@ begin
 
   -- decode the next 16-bit word from the write buffer
   -- sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE else (others => 'Z');
-  sdram_dq <= data_reg(15 downto 0 ) when state = WRITE else (others => 'Z');
-
+  with wait_counter select
+    sdram_dq <= 
+      data_reg(31 downto 16) when 0,
+      data_reg(15 downto 0)  when 1,
+      data_reg(31 downto 16) when 2,
+      (others => 'Z')        when others;
   -- set SDRAM data mask
   sdram_dqmh <= '0';
   sdram_dqml <= '0';

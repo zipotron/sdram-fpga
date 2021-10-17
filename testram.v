@@ -77,14 +77,16 @@ module testram (
   // Signals
   // ===============================================================
   reg         state;
-  reg [7:0]   addr;
+  reg [15:0]  addr;
   reg         req;
   reg         we;
-  reg [22:0]  cnt;
+  reg [16:0]  cnt;
+  reg         err;
+  reg         done;
 
   wire [31:0] dout;
   wire        valid;
-  wire [31:0] din = addr;
+  wire [31:0] din = {~addr, addr};
   wire        ack;
 
   // ===============================================================
@@ -98,29 +100,35 @@ module testram (
       we <= 0;
       state <= 0;
       led <= 0;
+      err <= 0;
+      done <= 0;
     end else begin
       cnt <= cnt + 1;                // Delay counter
       if (cnt == 0) req <= 1;        // Start request when counter is zero
       if (state == 0) begin          // write 256 values
-	we <= 1;
-	led <= din;                  // Put value written on leds (writes too fast to see this)
+        we <= 1;
+        led <= din[15:8];            // Put value written on leds (writes too fast to see this)
         if (ack) begin               // Cancel request on ack, and increment address
-	  req <= 0;
+          req <= 0;
           addr <= addr + 1;
-	  cnt <= 0;                  // Fast write
-	  if (&addr) begin           // Switch to read
+          cnt <= 0;                  // Fast write
+          if (&addr) begin           // Switch to read
             addr <= 0;
-	    state <= 1;
-	    we <= 0;
-	    cnt <= 0;
-	  end
+            state <= 1;
+            we <= 0;
+            cnt <= 0;
+          end
         end  
       end else begin                 // read
-	if (ack) begin
-	  req <= 0;
-	  addr <= addr + 1;
-	end
-	if (valid) led <= dout[7:0]; // Put valid data read on leds
+        if (ack) begin
+          req <= 0;
+        end
+        if (valid) begin
+          led <= dout[12:3];         // Put valid data read on leds
+          if (dout != {~addr[31:16], addr[15:0]}) err <= 1;
+          addr <= addr + 1;
+          if (&addr) done <= 1;
+        end
       end
     end
   end
@@ -151,7 +159,7 @@ module testram (
   );
 
   // Diagnostic leds
-  assign diag16 = {reset, valid, ack, state, addr};
+  assign diag16 = {reset, err, done, valid, ack, state, addr[15:8]};
 
 endmodule
 
