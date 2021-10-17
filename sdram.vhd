@@ -47,7 +47,7 @@ entity sdram is
     --
     -- This value must be provided, as it is used to calculate the number of
     -- clock cycles required for the other timing values.
-    CLK_FREQ : real;
+    CLK_FREQ : real := 25.0;
 
     -- 32-bit controller interface
     ADDR_WIDTH : natural := 23;
@@ -437,7 +437,8 @@ begin
       (others => '0') when others;
 
   -- decode the next 16-bit word from the write buffer
-  sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE else (others => 'Z');
+  -- sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE else (others => 'Z');
+  sdram_dq <= data_reg(15 downto 0 ) when state = WRITE else (others => 'Z');
 
   -- set SDRAM data mask
   sdram_dqmh <= '0';
