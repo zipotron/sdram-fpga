@@ -47,7 +47,7 @@ entity sdram is
     --
     -- This value must be provided, as it is used to calculate the number of
     -- clock cycles required for the other timing values.
-    clk_freq : natural := 25;
+    clk_freq : natural := 100;
 
     -- 32-bit controller interface
     ADDR_WIDTH : natural := 23;

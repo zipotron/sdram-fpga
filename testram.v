@@ -92,7 +92,7 @@ module testram (
   // ===============================================================
   // Test SDRAM by showing counter on leds
   // ===============================================================
-  always @(posedge clk_cpu) begin
+  always @(posedge clk_sdram) begin
     if (reset) begin
       addr <= 0;
       cnt <= 0;
@@ -154,7 +154,7 @@ module testram (
    .we(we),
    .valid(valid),
    .q(dout),
-   .clk(clk_cpu),
+   .clk(clk_sdram),
    .reset(reset)
   );
 
