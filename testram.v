@@ -77,7 +77,7 @@ module testram (
   // Signals
   // ===============================================================
   reg         state;
-  reg [15:0]  addr;
+  reg [15:0]  addr; // 32-bit word address, not byte address
   reg         req;
   reg         we;
   reg [16:0]  cnt;
