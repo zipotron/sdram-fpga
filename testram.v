@@ -44,7 +44,6 @@ module testram (
   wire clk_cpu   = clocks[1];
   wire clk_sdram = clocks[2];
   assign sdram_clk = clocks[3];
-  assign sdram_cke = 1'b1;
 
   // ===============================================================
   // Reset generation
