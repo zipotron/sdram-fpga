@@ -125,7 +125,7 @@ module testram (
         end
         if (valid) begin
           led <= dout[12:3];         // Put valid data read on leds
-          if (dout != {~addr[31:16], addr[15:0]}) err <= 1;
+          if (dout != {~addr, addr}) err <= 1;
           addr <= addr + 1;
           if (&addr) done <= 1;
         end
