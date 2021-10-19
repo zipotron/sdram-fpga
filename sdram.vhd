@@ -437,21 +437,10 @@ begin
       (others => '0') when others;
 
   -- decode the next 16-bit word from the write buffer
-  -- sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE else (others => 'Z');
-  -- TODO Fix this. The above code did not work. The code below appears to work but makes no sense.
-  -- In particular, it does not explicitly tristate sdram_dq when doing reads.
-  with wait_counter select
-    sdram_dq <= 
-      data_reg(31 downto 16) when 0,
-      data_reg(15 downto 0)  when 1,
-      data_reg(31 downto 16) when 2,
-      (others => 'Z')        when others;
-  -- This code which should be equivalent, also does not work.
-  -- sdram_dq <=
-  --     data_reg(31 downto 16) when wait_counter = 0 else
-  --     data_reg(15 downto 0)  when wait_counter = 1 else
-  --     data_reg(31 downto 16) when wait_counter = 2 else
-  --     (others => 'Z');
+  sdram_dq <=
+      (others => 'Z') when state /= WRITE else           -- tristate when not a WRITE
+      data_reg(31 downto 16) when wait_counter = 0 else  -- first cycle of WRITE writes most significant 16 bits
+      data_reg(15 downto 0);                             -- second cycle writes least significant 16 bits
   -- set SDRAM data mask
   sdram_dqmh <= '0';
   sdram_dqml <= '0';
