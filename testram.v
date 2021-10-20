@@ -66,7 +66,6 @@ module testram (
   wire clk_cpu   = clocks[1];
   wire clk_sdram = clocks[2];
   assign sdram_clk = clocks[3];
-  assign sdram_cke = 1'b1;
 
   // ===============================================================
   // Reset generation
@@ -99,7 +98,7 @@ module testram (
   // Signals
   // ===============================================================
   reg         state;
-  reg [15:0]  addr;
+  reg [15:0]  addr; // 32-bit word address, not byte address
   reg         req;
   reg         we;
   reg [16:0]  cnt;
@@ -147,7 +146,7 @@ module testram (
         end
         if (valid) begin
           led <= dout[12:3];         // Put valid data read on leds
-          if (dout != {~addr[31:16], addr[15:0]}) err <= 1;
+          if (dout != {~addr, addr}) err <= 1;
           addr <= addr + 1;
           if (&addr) done <= 1;
         end

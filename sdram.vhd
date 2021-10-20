@@ -437,13 +437,10 @@ begin
       (others => '0') when others;
 
   -- decode the next 16-bit word from the write buffer
-  -- sdram_dq <= data_reg((BURST_LENGTH-wait_counter)*SDRAM_DATA_WIDTH-1 downto (BURST_LENGTH-wait_counter-1)*SDRAM_DATA_WIDTH) when state = WRITE else (others => 'Z');
-  with wait_counter select
-    sdram_dq <= 
-      data_reg(31 downto 16) when 0,
-      data_reg(15 downto 0)  when 1,
-      data_reg(31 downto 16) when 2,
-      (others => 'Z')        when others;
+  sdram_dq <=
+      (others => 'Z') when state /= WRITE else           -- tristate when not a WRITE
+      data_reg(31 downto 16) when wait_counter = 0 else  -- first cycle of WRITE writes most significant 16 bits
+      data_reg(15 downto 0);                             -- second cycle writes least significant 16 bits
   -- set SDRAM data mask
   sdram_dqmh <= '0';
   sdram_dqml <= '0';
