@@ -87,7 +87,7 @@ begin
     sdram_clk <= clocks(3);
     
     --pwr_up_reset_n <= '1' when not unsigned(pwr_up_reset_counter) = 0 else '0';
-    pwr_up_reset_n <= pwr_up_reset_counter(0) and pwr_up_reset_counter(1) and pwr_up_reset_counter(2) and pwr_up_reset_counter(3) and pwr_up_reset_counter(4) and pwr_up_reset_counter(5) and pwr_up_reset_counter(6) and pwr_up_reset_counter(7) and pwr_up_reset_counter(8) and pwr_up_reset_counter(9) and pwr_up_reset_counter(10) and pwr_up_reset_counter(12) and pwr_up_reset_counter(13) and pwr_up_reset_counter(14) and pwr_up_reset_counter(15);
+    pwr_up_reset_n <= pwr_up_reset_counter(20) and pwr_up_reset_counter(21) and pwr_up_reset_counter(22) and pwr_up_reset_counter(23) and pwr_up_reset_counter(24) and pwr_up_reset_counter(25) and pwr_up_reset_counter(26);
     reset <= pwr_up_reset_n or not ULX3S_RST_N;
     process (clk_cpu)
     begin
