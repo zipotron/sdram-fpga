@@ -53,8 +53,16 @@ architecture testram_rtl of testram is
   
   signal pll_locked : std_logic;
   signal clocks : std_logic_vector(03 downto 0);
+  signal clk_hdmi : std_logic;
+  signal clk_vga : std_logic;
+  signal clk_cpu : std_logic;
+  signal clk_sdram : std_logic;
   
-  signal led       : std_logic_vector(7 downto 0);
+  signal led       : std_logic_vector(7 downto 0) := (others => '0');
+  
+  signal pwr_up_reset_counter : std_logic_vector(26 downto 0) := (others => '0');
+  signal pwr_up_reset_n : std_logic :='0';
+  signal reset : std_logic;
   
 begin
   (ULX3S_LED0, ULX3S_LED1, ULX3S_LED2, ULX3S_LED3, ULX3S_LED4, ULX3S_LED5, ULX3S_LED6, ULX3S_LED7) <= led;
@@ -72,5 +80,24 @@ begin
       clk_o => clocks,
       locked => pll_locked
     );
-  
+    clk_hdmi <= clocks(0);
+    clk_vga <= clocks(1);
+    clk_cpu <= clocks(1);
+    clk_sdram <= clocks(2);
+    sdram_clk <= clocks(3);
+    
+    --pwr_up_reset_n <= '1' when not unsigned(pwr_up_reset_counter) = 0 else '0';
+    pwr_up_reset_n <= pwr_up_reset_counter(0) and pwr_up_reset_counter(1) and pwr_up_reset_counter(2) and pwr_up_reset_counter(3) and pwr_up_reset_counter(4) and pwr_up_reset_counter(5) and pwr_up_reset_counter(6) and pwr_up_reset_counter(7) and pwr_up_reset_counter(8) and pwr_up_reset_counter(9) and pwr_up_reset_counter(10) and pwr_up_reset_counter(12) and pwr_up_reset_counter(13) and pwr_up_reset_counter(14) and pwr_up_reset_counter(15);
+    reset <= pwr_up_reset_n or not ULX3S_RST_N;
+    process (clk_cpu)
+    begin
+      if rising_edge(clk_cpu) then
+        if pwr_up_reset_n = '0' then
+          pwr_up_reset_counter <= std_logic_vector( unsigned(pwr_up_reset_counter) + 1);
+        end if;
+      end if;
+    end process;
+    
+    led(0) <= pwr_up_reset_n;
+    led(7 downto 1) <= pwr_up_reset_counter(26 downto 20); -- Prueba temporal
 end architecture;
