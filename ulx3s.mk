@@ -11,8 +11,8 @@ prog: $(BUILDDIR)/toplevel.bit
 
 $(BUILDDIR)/toplevel.json: $(VERILOG)
 	mkdir -p $(BUILDDIR)
-	ghdl -a testram.vhd sdram.vhd
-	yosys -m ghdl.so -p "ghdl testram; synth_ecp5 -abc9 -top testram -json $@" $^
+	ghdl -a --std=08 testram.vhd sdram.vhd
+	yosys -m ghdl.so -p "ghdl --std=08 testram; synth_ecp5 -abc9 -top testram -json $@" $^
 
 $(BUILDDIR)/%.config: $(PIN_DEF) $(BUILDDIR)/toplevel.json
 	 nextpnr-ecp5 --${DEVICE} --package CABGA381 --freq 25 --textcfg  $@ --json $(filter-out $<,$^) --lpf $< 

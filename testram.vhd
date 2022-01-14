@@ -60,7 +60,7 @@ architecture testram_rtl of testram is
   
   signal led       : std_logic_vector(7 downto 0) := (others => '0');
   
-  signal pwr_up_reset_counter : std_logic_vector(26 downto 0) := (others => '0');
+  signal pwr_up_reset_counter : std_logic_vector(15 downto 0) := (others => '0');
   signal pwr_up_reset_n : std_logic :='0';
   signal reset : std_logic;
   
@@ -86,18 +86,15 @@ begin
     clk_sdram <= clocks(2);
     sdram_clk <= clocks(3);
     
-    --pwr_up_reset_n <= '1' when not unsigned(pwr_up_reset_counter) = 0 else '0';
-    pwr_up_reset_n <= pwr_up_reset_counter(20) and pwr_up_reset_counter(21) and pwr_up_reset_counter(22) and pwr_up_reset_counter(23) and pwr_up_reset_counter(24) and pwr_up_reset_counter(25) and pwr_up_reset_counter(26);
+    pwr_up_reset_n <= and pwr_up_reset_counter;
     reset <= pwr_up_reset_n or not ULX3S_RST_N;
     process (clk_cpu)
     begin
-      if rising_edge(clk_cpu) then
-        if pwr_up_reset_n = '0' then
-          pwr_up_reset_counter <= std_logic_vector( unsigned(pwr_up_reset_counter) + 1);
-        end if;
+      if rising_edge(clk_cpu) and pwr_up_reset_n = '0' then
+        pwr_up_reset_counter <= std_logic_vector( unsigned(pwr_up_reset_counter) + 1);
       end if;
     end process;
     
-    led(0) <= pwr_up_reset_n;
-    led(7 downto 1) <= pwr_up_reset_counter(26 downto 20); -- Prueba temporal
+    led(0) <= pwr_up_reset_n; -- Prueba temporal
+    led(7 downto 1) <= pwr_up_reset_counter(15 downto 9); -- Prueba temporal
 end architecture;
