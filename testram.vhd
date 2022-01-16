@@ -25,8 +25,8 @@ entity testram is
     sdram_wen  : out   std_logic;                        -- Write Enable
     sdram_d    : inout std_logic_vector(15 downto 0);    -- Data I/O (16 bits)
     sdram_dqm  : out   std_logic_vector(1 downto 0);     -- Output Disable / Write Mask
-    sdram_a  : out   std_logic_vector(12 downto 0);    -- Address Input (12 bits)
-    sdram_ba  : out   std_logic_vector(1 downto 0);              -- Bank Address
+    sdram_a  : out   unsigned(12 downto 0);    -- Address Input (12 bits)
+    sdram_ba  : out   unsigned(1 downto 0);              -- Bank Address
     
     gp    : inout std_logic_vector(27 downto 0);
     gn    : inout std_logic_vector(27 downto 0)
@@ -51,6 +51,88 @@ architecture testram_rtl of testram is
     );
   end component ecp5pll;
   
+  component sdram
+  generic (
+    -- clock frequency (in MHz)
+    --
+    -- This value must be provided, as it is used to calculate the number of
+    -- clock cycles required for the other timing values.
+    clk_freq : natural := 100;
+
+    -- 32-bit controller interface
+    ADDR_WIDTH : natural := 23;
+    DATA_WIDTH : natural := 32;
+
+    -- SDRAM interface
+    SDRAM_ADDR_WIDTH : natural := 13;
+    SDRAM_DATA_WIDTH : natural := 16;
+    SDRAM_COL_WIDTH  : natural := 9;
+    SDRAM_ROW_WIDTH  : natural := 13;
+    SDRAM_BANK_WIDTH : natural := 2;
+
+    -- The delay in clock cycles, between the start of a read command and the
+    -- availability of the output data.
+    CAS_LATENCY : natural := 2; -- 2=below 133MHz, 3=above 133MHz
+
+    -- The number of 16-bit words to be bursted during a read/write.
+    BURST_LENGTH : integer := 2;
+
+    -- timing values (in nanoseconds)
+    --
+    -- These values can be adjusted to match the exact timing of your SDRAM
+    -- chip (refer to the datasheet).
+    T_DESL : real :=  50000.0; -- startup delay
+    T_MRD  : real :=     12.0; -- mode register cycle time
+    T_RC   : real :=     60.0; -- row cycle time
+    T_RCD  : real :=     18.0; -- RAS to CAS delay
+    T_RP   : real :=     18.0; -- precharge to activate delay
+    T_WR   : real :=     12.0; -- write recovery time
+    T_REFI : real :=   7800.0  -- average refresh interval
+  );
+  port (
+    -- reset
+    reset : in std_logic := '0';
+
+    -- clock
+    clk : in std_logic;
+
+    -- address bus
+    addr : in unsigned(ADDR_WIDTH-1 downto 0);
+
+    -- input data bus
+    data : in std_logic_vector(DATA_WIDTH-1 downto 0);
+
+    -- When the write enable signal is asserted, a write operation will be performed.
+    we : in std_logic;
+
+    -- When the request signal is asserted, an operation will be performed.
+    req : in std_logic;
+
+    -- The acknowledge signal is asserted by the SDRAM controller when
+    -- a request has been accepted.
+    ack : out std_logic;
+
+    -- The valid signal is asserted when there is a valid word on the output
+    -- data bus.
+    valid : out std_logic;
+
+    -- output data bus
+    q : out std_logic_vector(DATA_WIDTH-1 downto 0);
+
+    -- SDRAM interface (e.g. AS4C16M16SA-6TCN, IS42S16400F, etc.)
+    sdram_a     : out unsigned(SDRAM_ADDR_WIDTH-1 downto 0);
+    sdram_ba    : out unsigned(SDRAM_BANK_WIDTH-1 downto 0);
+    sdram_dq    : inout std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_cke   : out std_logic;
+    sdram_cs_n  : out std_logic;
+    sdram_ras_n : out std_logic;
+    sdram_cas_n : out std_logic;
+    sdram_we_n  : out std_logic;
+    sdram_dqml  : out std_logic;
+    sdram_dqmh  : out std_logic
+  );
+  end component sdram;
+
   signal pll_locked : std_logic;
   signal clocks : std_logic_vector(03 downto 0);
   signal clk_hdmi : std_logic;
@@ -63,6 +145,21 @@ architecture testram_rtl of testram is
   signal pwr_up_reset_counter : std_logic_vector(15 downto 0) := (others => '0');
   signal pwr_up_reset_n : std_logic :='0';
   signal reset : std_logic;
+  
+  -- Internal signals
+  subtype double_byte is integer range 0 to 65535;
+  signal state : std_logic;
+  signal addr : unsigned(15 downto 0);
+  signal req : std_logic;
+  signal we : std_logic;
+  signal cnt : double_byte;
+  signal err : std_logic;
+  signal done : std_logic;
+  
+  signal dout : std_logic_vector(31 downto 0);
+  signal valid : std_logic;
+  signal din : std_logic_vector(31 downto 0);
+  signal ack : std_logic;
   
 begin
   (ULX3S_LED0, ULX3S_LED1, ULX3S_LED2, ULX3S_LED3, ULX3S_LED4, ULX3S_LED5, ULX3S_LED6, ULX3S_LED7) <= led;
@@ -95,6 +192,82 @@ begin
       end if;
     end process;
     
-    led(0) <= pwr_up_reset_n; -- Prueba temporal
-    led(7 downto 1) <= pwr_up_reset_counter(15 downto 9); -- Prueba temporal
+    din <= (not std_logic_vector(addr), std_logic_vector(addr));
+    
+    process (clk_sdram)
+    begin
+      if rising_edge(clk_cpu) then
+        if reset = '1' then
+          addr <= (others => '0');
+          cnt <= 0;
+          req <= '0';
+          we <= '0';
+          state <= '0';
+          led <= (others => '0');
+          err <= '0';
+          done <= '0';
+        else
+          cnt <= cnt + 1;
+          if cnt = 0 then
+            req <= '1';
+          end if;
+          if state = '0' then
+            we <= '1';
+            led <= din(15 downto 8);
+            if ack = '1' then
+              req <= '0';
+              addr <= addr + 1;
+              cnt <= 0;
+              if and addr then
+                addr <= (others => '0');
+                state <= '1';
+                we <= '0';
+                cnt <= 0;
+              end if;
+            end if;
+            else
+              if ack = '1' then
+                req <= '0';
+              end if;
+              if valid = '1' then
+                led <= dout(12 downto 5);
+                if dout /= din then
+                  err <= '1';
+                end if;
+                addr <= addr + 1;
+                if and std_logic_vector(addr) then 
+                  done <= '1';
+                end if;
+              end if;
+            end if;
+        end if;
+      end if;
+    end process;
+    
+    inst_sdram : sdram
+    generic map (
+      ADDR_WIDTH => 16
+    )
+    port map (
+      sdram_a => sdram_a,
+      sdram_dq => sdram_d,
+      sdram_dqml => sdram_dqm(0),
+      sdram_dqmh => sdram_dqm(1),
+      sdram_cs_n => sdram_csn,
+      sdram_ba => sdram_ba,
+      sdram_we_n => sdram_wen,
+      sdram_ras_n => sdram_rasn,
+      sdram_cas_n => sdram_casn,
+       -- system interface
+      addr => addr,
+      data => din,
+      ack => ack,
+      req => req,
+      we => we,
+      valid => valid,
+      q => dout,
+      clk => clk_sdram,
+      reset => reset
+    );
+    
 end architecture;
