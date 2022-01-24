@@ -35,7 +35,7 @@ module testram (
   output  [1:0] sdram_ba, // SDRAM bank-address
   output  [1:0] sdram_dqm,// byte select
   inout  [15:0] sdram_d,  // data bus to/from SDRAM
-  inout  [27:0] gp,gn,
+
   // Leds
   output reg [7:0]  led
 );
@@ -78,21 +78,6 @@ module testram (
      if (!pwr_up_reset_n)
        pwr_up_reset_counter <= pwr_up_reset_counter + 1;
   end
-
-  // ===============================================================
-  // Diagnostic leds
-  // ===============================================================
-  wire [15:0] diag16;
-
-  generate
-    genvar i;
-      for(i = 0; i < 4; i = i+1) begin
-        assign gn[17-i] = diag16[8+i];
-        assign gp[17-i] = diag16[12+i];
-        assign gn[24-i] = diag16[i];
-        assign gp[24-i] = diag16[4+i];
-      end
-  endgenerate
 
   // ===============================================================
   // Signals
@@ -178,9 +163,6 @@ module testram (
    .clk(clk_sdram),
    .reset(reset)
   );
-
-  // Diagnostic leds
-  assign diag16 = {reset, err, done, valid, ack, state, addr[15:8]};
 
 endmodule
 
