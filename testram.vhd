@@ -183,12 +183,14 @@ begin
     clk_sdram <= clocks(2);
     sdram_clk <= clocks(3);
     
-    pwr_up_reset_n <= and pwr_up_reset_counter;
+    pwr_up_reset_n <= '1' when pwr_up_reset_counter = x"ffff" else '0';
     reset <= pwr_up_reset_n or not ULX3S_RST_N;
     process (clk_cpu)
     begin
-      if rising_edge(clk_cpu) and pwr_up_reset_n = '0' then
-        pwr_up_reset_counter <= std_logic_vector( unsigned(pwr_up_reset_counter) + 1);
+      if rising_edge(clk_cpu) then
+        if pwr_up_reset_n = '0' then
+          pwr_up_reset_counter <= std_logic_vector( unsigned(pwr_up_reset_counter) + 1);
+        end if;
       end if;
     end process;
     
@@ -218,7 +220,7 @@ begin
               req <= '0';
               addr <= addr + 1;
               cnt <= 0;
-              if and addr then
+              if (std_logic_vector(addr) = x"ffff") then
                 addr <= (others => '0');
                 state <= '1';
                 we <= '0';
@@ -235,7 +237,7 @@ begin
                   err <= '1';
                 end if;
                 addr <= addr + 1;
-                if and std_logic_vector(addr) then 
+                if (std_logic_vector(addr) = x"ffff") then
                   done <= '1';
                 end if;
               end if;
