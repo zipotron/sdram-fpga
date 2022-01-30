@@ -147,12 +147,11 @@ architecture testram_rtl of testram is
   signal reset : std_logic;
   
   -- Internal signals
-  subtype double_byte is integer range 0 to 65535;
   signal state : std_logic;
   signal addr : unsigned(15 downto 0);
   signal req : std_logic;
   signal we : std_logic;
-  signal cnt : double_byte;
+  signal cnt : unsigned(16 downto 0);
   signal err : std_logic;
   signal done : std_logic;
   
@@ -199,7 +198,7 @@ begin
       if rising_edge(clk_cpu) then
         if reset = '1' then
           addr <= (others => '0');
-          cnt <= 0;
+          cnt <= (others => '0');
           req <= '0';
           we <= '0';
           state <= '0';
@@ -217,12 +216,12 @@ begin
             if ack = '1' then
               req <= '0';
               addr <= addr + 1;
-              cnt <= 0;
+              cnt <= (others => '0');
               if and addr then
                 addr <= (others => '0');
                 state <= '1';
                 we <= '0';
-                cnt <= 0;
+                cnt <= (others => '0');
               end if;
             end if;
             else
