@@ -122,7 +122,8 @@ architecture testram_rtl of testram is
     -- SDRAM interface (e.g. AS4C16M16SA-6TCN, IS42S16400F, etc.)
     sdram_a     : out unsigned(SDRAM_ADDR_WIDTH-1 downto 0);
     sdram_ba    : out unsigned(SDRAM_BANK_WIDTH-1 downto 0);
-    sdram_dq    : inout std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_in : in std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_out: out std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
     sdram_cke   : out std_logic;
     sdram_cs_n  : out std_logic;
     sdram_ras_n : out std_logic;
@@ -160,6 +161,8 @@ architecture testram_rtl of testram is
   signal din : std_logic_vector(31 downto 0);
   signal ack : std_logic;
   
+  signal sdram_d_switch : std_logic_vector(15 downto 0);
+  
 begin
   (ULX3S_LED0, ULX3S_LED1, ULX3S_LED2, ULX3S_LED3, ULX3S_LED4, ULX3S_LED5, ULX3S_LED6, ULX3S_LED7) <= led;
   ecp5pll_inst : ecp5pll
@@ -181,6 +184,9 @@ begin
     clk_cpu <= clocks(1);
     clk_sdram <= clocks(2);
     sdram_clk <= clocks(3);
+    
+    sdram_d_switch <= sdram_d when sdram_wen = '1' else (others => '0');
+    sdram_d <= sdram_d_switch when sdram_wen = '0' else (others => '0');
     
     pwr_up_reset_n <= and pwr_up_reset_counter;
     reset <= pwr_up_reset_n or not ULX3S_RST_N;
@@ -249,7 +255,8 @@ begin
     )
     port map (
       sdram_a => sdram_a,
-      sdram_dq => sdram_d,
+      sdram_dq_in => sdram_d_switch,
+      sdram_dq_out => sdram_d_switch,
       sdram_dqml => sdram_dqm(0),
       sdram_dqmh => sdram_dqm(1),
       sdram_cs_n => sdram_csn,
