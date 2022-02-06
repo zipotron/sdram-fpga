@@ -1,4 +1,4 @@
-VERILOG = ecp5pll.sv
+#VERILOG = ecp5pll.sv
 
 PIN_DEF = ULX3S.lpf
 DEVICE = 85k
