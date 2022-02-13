@@ -12,7 +12,6 @@ module top (
   output  [1:0] sdram_ba, // SDRAM bank-address
   output  [1:0] sdram_dqm,// byte select
   inout  [15:0] sdram_d,  // data bus to/from SDRAM
-  inout  [27:0] gp,gn,
   // Leds
   output reg [7:0]  led
 );
@@ -34,11 +33,15 @@ module top (
     .sdram_rasn(sdram_rasn),
     .sdram_casn(sdram_casn),
     .sdram_wen(sdram_wen),
-    .sdram_d(sdram_d),
+    .sdram_d_in(sdram_d_in),
+    .sdram_d_out(sdram_d_out),
     .sdram_dqm(sdram_dqm),
     .sdram_a(sdram_a),
-    .sdram_ba(sdram_ba),
-    .gp(gp),
-    .gn(gn));
+    .sdram_ba(sdram_ba));
+   
+   wire sdram_d_out;
+   wire sdram_d_in;
+   assign sdram_d = sdram_wen? sdram_d_out : 1'bZ;
+   assign sdram_d_in = sdram_d;
    
 endmodule

@@ -23,7 +23,8 @@ entity testram is
     sdram_rasn : out   std_logic;                        -- Row Address Strobe
     sdram_casn : out   std_logic;                        -- Column Address Strobe
     sdram_wen  : out   std_logic;                        -- Write Enable
-    sdram_d    : inout std_logic_vector(15 downto 0);    -- Data I/O (16 bits)
+    sdram_d_in    : in std_logic_vector(15 downto 0);    -- Data I/O (16 bits)
+    sdram_d_out    : out std_logic_vector(15 downto 0);    -- Data I/O (16 bits)
     sdram_dqm  : out   std_logic_vector(1 downto 0);     -- Output Disable / Write Mask
     sdram_a  : out   unsigned(12 downto 0);    -- Address Input (12 bits)
     sdram_ba  : out   unsigned(1 downto 0);              -- Bank Address
@@ -122,7 +123,8 @@ architecture testram_rtl of testram is
     -- SDRAM interface (e.g. AS4C16M16SA-6TCN, IS42S16400F, etc.)
     sdram_a     : out unsigned(SDRAM_ADDR_WIDTH-1 downto 0);
     sdram_ba    : out unsigned(SDRAM_BANK_WIDTH-1 downto 0);
-    sdram_dq    : inout std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_in    : in std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_out    : out std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
     sdram_cke   : out std_logic;
     sdram_cs_n  : out std_logic;
     sdram_ras_n : out std_logic;
@@ -249,7 +251,8 @@ begin
     )
     port map (
       sdram_a => sdram_a,
-      sdram_dq => sdram_d,
+      sdram_dq_in => sdram_d_in,
+      sdram_dq_out => sdram_d_out,
       sdram_dqml => sdram_dqm(0),
       sdram_dqmh => sdram_dqm(1),
       sdram_cs_n => sdram_csn,

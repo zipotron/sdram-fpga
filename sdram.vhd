@@ -113,7 +113,8 @@ entity sdram is
     -- SDRAM interface (e.g. AS4C16M16SA-6TCN, IS42S16400F, etc.)
     sdram_a     : out unsigned(SDRAM_ADDR_WIDTH-1 downto 0);
     sdram_ba    : out unsigned(SDRAM_BANK_WIDTH-1 downto 0);
-    sdram_dq    : inout std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_in    : in std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
+    sdram_dq_out    : out std_logic_vector(SDRAM_DATA_WIDTH-1 downto 0);
     sdram_cke   : out std_logic;
     sdram_cs_n  : out std_logic;
     sdram_ras_n : out std_logic;
@@ -380,9 +381,9 @@ begin
 
       if state = READ then
         if first_word = '1' then
-          q_reg(31 downto 16) <= sdram_dq;
+          q_reg(31 downto 16) <= sdram_dq_in;
         elsif read_done = '1' then
-          q_reg(15 downto 0) <= sdram_dq;
+          q_reg(15 downto 0) <= sdram_dq_in;
           valid <= '1';
         end if;
       end if;
@@ -438,7 +439,7 @@ begin
       (others => '0') when others;
 
   -- decode the next 16-bit word from the write buffer
-  sdram_dq <=
+  sdram_dq_out <=
       (others => 'Z') when state /= WRITE else           -- tristate when not a WRITE
       data_reg(31 downto 16) when wait_counter = 0 else  -- first cycle of WRITE writes most significant 16 bits
       data_reg(15 downto 0);                             -- second cycle writes least significant 16 bits

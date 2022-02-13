@@ -11,7 +11,7 @@ prog: $(BUILDDIR)/toplevel.bit
 
 $(BUILDDIR)/toplevel.json: $(VERILOG)
 	mkdir -p $(BUILDDIR)
-	ghdl -a --std=08 testram.vhd sdram.vhd ecp5pll.vhd
+	ghdl -a --std=08 testram.vhd sdram.vhd
 	yosys -m ghdl.so -p "ghdl --std=08 testram; synth_ecp5 -abc9 -top top -json $@" $^
 
 $(BUILDDIR)/%.config: $(PIN_DEF) $(BUILDDIR)/toplevel.json
