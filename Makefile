@@ -1,6 +1,6 @@
-#VERILOG = ecp5pll.sv
+VERILOG = top.v
 
-PIN_DEF = ULX3S.lpf
+PIN_DEF = ulx3s_v20.lpf
 DEVICE = 85k
 
 include ulx3s.mk
